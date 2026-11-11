@@ -1,8 +1,13 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:18-alpine'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     environment {
-        DOCKERHUB_USERNAME = 'YOUR_DOCKERHUB_USERNAME'
+        DOCKERHUB_USERNAME = 'thimal77'
         IMAGE_NAME = 'cicd-demo-app'
         IMAGE_TAG = "build-${BUILD_NUMBER}"
     }
@@ -31,13 +36,15 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            agent any
             steps {
                 echo 'Building Docker image...'
-                sh "docker build -t ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh "docker build -t thimal77/cicd-demo-app:build-${BUILD_NUMBER} ."
             }
         }
 
         stage('Push to Docker Hub') {
+            agent any
             steps {
                 echo 'Pushing image to Docker Hub...'
                 withCredentials([usernamePassword(
@@ -46,7 +53,7 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                    sh "docker push ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}"
+                    sh "docker push thimal77/cicd-demo-app:build-${BUILD_NUMBER}"
                 }
             }
         }
